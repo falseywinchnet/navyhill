@@ -46,5 +46,86 @@ blah blah blah. Donate to <a href="https://www.patreon.com/midwestskykings">my p
   <p style="font-size: 1.5em; color: white;">As you can see, I have good reception and I am centrally located.</p>
   
 </div>
+   <!-- Chat Page -->
+<div data-role="page" id="chatPage" data-theme="c" class="type-interior">
+
+  <div data-role="content">
+    <div data-role="header" data-position="fixed" data-tap-toggle="false">
+      <h1>Pub Messenger</h1>
+    </div><!-- /header -->
+
+    <div data-role="content">
+      <ul data-role="listview" id="messageList">
+        <!-- <li><span class="username">User123:</span>This is my message.</li> -->
+      </ul>
+    </div>
+
+    <div data-role="footer" data-theme="c">
+      <textarea id="messageContent"></textarea>
+        <div class="ui-grid-a">
+          <div class="ui-block-a"><a href="#" id="sendMessageButton" data-role="button">Send Message</a></div>
+        </div>
+    </div>
+  </div><!-- /content -->
+
+</div><!-- /page -->
   </body>
+<script>
+
+$(document).ready(function () {
+  // Initialize the PubNub API connection.
+  var pubnub = PUBNUB.init({
+    publish_key: 'pub-c-364d48c6-e882-449f-b83a-de7234741068',
+    subscribe_key: 'sub-c-867001a2-7eb7-11ec-8ecc-dee9ee9643e0'
+  });
+ 
+  // Grab references for all of our elements.
+  var messageContent = $('#messageContent'),
+      sendMessageButton = $('#sendMessageButton'),
+      messageList = $('#messageList');
+ 
+  // Handles all the messages coming in from pubnub.subscribe.
+  function handleMessage(message) {
+    var messageEl = $("<li class='message'>"
+        + "<span class='username'>" + message.username + ": </span>"
+        + message.text
+        + "</li>");
+    messageList.append(messageEl);
+    messageList.listview('refresh');
+ 
+    // Scroll to bottom of page
+    $("html, body").animate({ scrollTop: $(document).height() - $(window).height() }, 'slow');
+  };
+ 
+  // Compose and send a message when the user clicks our send message button.
+  sendMessageButton.click(function (event) {
+    var message = messageContent.val();
+ 
+    if (message != '') {
+      pubnub.publish({
+        channel: 'chat',
+        message: {
+          username: 'test',
+          text: message
+        }
+      });
+ 
+      messageContent.val("");
+    }
+  });
+ 
+  // Also send a message when the user hits the enter button in the text area.
+  messageContent.bind('keydown', function (event) {
+    if((event.keyCode || event.charCode) !== 13) return true;
+    sendMessageButton.click();
+    return false;
+  });
+ 
+  // Subscribe to messages coming in from the channel.
+  pubnub.subscribe({
+    channel: 'chat',
+    message: handleMessage
+  });
+});
+</script>
 </html>
